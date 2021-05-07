@@ -1,7 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 
-const { v4: uuidv4, validate } = require('uuid');
+const { v4: uuidv4, validate  } = require('uuid');
+
 
 const app = express();
 app.use(express.json());
@@ -10,19 +11,62 @@ app.use(cors());
 const users = [];
 
 function checksExistsUserAccount(request, response, next) {
-  // Complete aqui
+  const { username } = request.headers;
+
+  const user = users.find(user=> user.username === username);
+  if(user)  {
+    request.user = user;
+    return next();
+  }
+  return response.status(404).json({ message: "This username NOT exists !!"});
 }
 
 function checksCreateTodosUserAvailability(request, response, next) {
-  // Complete aqui
+ const user = request.user;
+ 
+ const userTodosLength = user.todos.length;
+ 
+    if( user.pro === true || userTodosLength < 11){
+      return next();
+    }
+    return response.status(400).json({ error: " This user is not PRO !!"});
 }
 
 function checksTodoExists(request, response, next) {
-  // Complete aqui
+    const { username } = request.headers;
+    const { id } = request.params;
+
+
+    const user = users.find(user=> user.username === username);
+    
+    if(user)  {
+      
+      if(validate(id)){
+        console.log(user);
+        const checkIdToUser = user.todos.find(user => user.todos === id)
+        if (checkIdToUser){
+          request.user = user;
+          request.id = id; 
+          return next();
+        }
+         return response.status(400).json({ error: "This ID does not pertec to user !"});
+      }
+        return response.status(400).json({ error: "This ID is not Valid !"});
+      
+    }
+    return response.status(404).json({ message: "This username NOT exists !!"});
+    
 }
 
 function findUserById(request, response, next) {
-  // Complete aqui
+  const { id } = request.params;
+
+  const user = users.find(user=> user.id === id);
+  if(user)  {
+    request.user = user;
+    return next();
+  }
+  return response.status(404).json({ message: "This username NOT exists !!"});
 }
 
 app.post('/users', (request, response) => {
