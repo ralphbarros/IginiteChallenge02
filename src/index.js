@@ -26,42 +26,51 @@ function checksCreateTodosUserAvailability(request, response, next) {
  
  const userTodosLength = user.todos.length;
  
-    if( user.pro === true || userTodosLength < 11){
+    if( user.pro === true || userTodosLength < 10){
       return next();
     }
-    return response.status(400).json({ error: " This user is not PRO !!"});
+    return response.status(403).json({ error: " This user is not PRO !!"});
 }
 
 function checksTodoExists(request, response, next) {
     const { username } = request.headers;
     const { id } = request.params;
+    const ids = [];
+    let contador = 0;
+    const findedUser = users.find((user)=> user.username === username);
+   
+    users.forEach(element => {
+      if(element.todos.find((todo)=>todo.id === id))
+      {
+        contador = contador + 1;
+      }      
+    });
 
-
-    const user = users.find(user=> user.username === username);
-    
-    if(user)  {
-      
-      if(validate(id)){
-        console.log(user);
-        const checkIdToUser = user.todos.find(user => user.todos === id)
-        if (checkIdToUser){
-          request.user = user;
-          request.id = id; 
-          return next();
-        }
-         return response.status(400).json({ error: "This ID does not pertec to user !"});
+    if(contador === 0) {
+      response.status(404).json({ error: "This ToDo Id does not Exist !!"})
+    }else 
+      {
+          if(findedUser)  {
+              const checkIdToDoUser = findedUser.todos.find((userid)=>userid.id===id);
+            
+                if (checkIdToDoUser){
+                      if(validate(id)){
+                        request.user = findedUser;
+                        request.todo = checkIdToDoUser; 
+                        return next();
+                      }
+                        return response.status(400);
+                }
+                return response.status(400).json({ error: "This ID does not belong to user !"});
+          }
+          return response.status(400).json({ message: "This username NOT exists !!"});
       }
-        return response.status(400).json({ error: "This ID is not Valid !"});
-      
-    }
-    return response.status(404).json({ message: "This username NOT exists !!"});
-    
 }
 
 function findUserById(request, response, next) {
   const { id } = request.params;
 
-  const user = users.find(user=> user.id === id);
+  const user = users.find((user)=> user.id === id);
   if(user)  {
     request.user = user;
     return next();
